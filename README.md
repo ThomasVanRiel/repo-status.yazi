@@ -15,7 +15,9 @@ changed files _inside_ the repository you are browsing. This plugin covers the
 other case: a directory full of repositories, where you want to see at a glance
 which ones are dirty, ahead or behind. The two work side by side.
 
-<!-- TODO: screenshot -->
+![Branch and status next to each repository directory](.github/screenshot.png)
+
+_With `align = true`, see [Alignment](#alignment)._
 
 ## Requirements
 
