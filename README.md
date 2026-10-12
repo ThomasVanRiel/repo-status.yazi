@@ -140,6 +140,11 @@ A directory with only clean repositories looks the same either way.
 - Worktrees and submodules (a `.git` file instead of a directory) are
   recognised.
 
+## Disclaimer
+
+This plugin, including its documentation, was developed with the assistance of
+an LLM (Claude). Please report anything that looks wrong in an issue.
+
 ## License
 
 MIT
