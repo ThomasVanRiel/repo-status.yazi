@@ -4,9 +4,9 @@ Show the branch and status of Git repositories next to their directory in the
 file list, like a shell prompt does.
 
 ```
- dotfiles                         󰊢 main !+
- notes                               󰊢 main
- website                 󰊢 feature/blog ? ⇡2
+ dotfiles                      󰊢 main  !+
+ notes                         󰊢 main
+ website               󰊢 feature/blog ?   ⇡2
  scratch
 ```
 
@@ -16,8 +16,6 @@ other case: a directory full of repositories, where you want to see at a glance
 which ones are dirty, ahead or behind. The two work side by side.
 
 ![Branch and status next to each repository directory](.github/screenshot.png)
-
-_With `align = true`, see [Alignment](#alignment)._
 
 ## Requirements
 
@@ -85,7 +83,7 @@ require("repo-status"):setup {
 	-- Text shown before the branch name
 	icon = "󰊢 ",
 	-- Give every sign its own column, see "Alignment"
-	align = false,
+	align = true,
 	-- Sign per status; set one to "" to hide that status
 	signs = {
 		conflicted = "=",
@@ -114,21 +112,22 @@ require("repo-status"):setup {
 
 ## Alignment
 
-By default the summary is as short as possible, so the signs end up wherever
-the branch name stops. With `align = true` every sign gets its own column,
-which is left empty for the repositories it does not apply to. The branch
-names then all end in the same column:
+Every sign gets its own column, which is left empty for the repositories it
+does not apply to, so the branch names all end in the same column. Space is
+only reserved for the signs that at least one repository in the directory
+shows, and the ahead and behind columns are as wide as their largest count.
+
+With `align = false` the summary is as short as possible instead, and the
+signs end up wherever the branch name stops:
 
 ```
- dotfiles                      󰊢 main  !+
- notes                         󰊢 main
- website               󰊢 feature/blog ?   ⇡2
+ dotfiles                         󰊢 main !+
+ notes                               󰊢 main
+ website                 󰊢 feature/blog ? ⇡2
  scratch
 ```
 
-Space is only reserved for the signs that at least one repository in the
-directory shows, and the ahead and behind columns are as wide as their largest
-count. A directory with only clean repositories looks the same either way.
+A directory with only clean repositories looks the same either way.
 
 ## Notes
 

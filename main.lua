@@ -154,7 +154,9 @@ local function setup(st, opts)
 	opts.order = opts.order or 1400
 	opts.style = opts.style or ui.Style():fg("yellow")
 	opts.icon = opts.icon or "󰊢 "
-	opts.align = opts.align or false
+	if opts.align == nil then
+		opts.align = true
+	end
 	opts.signs = ya.dict_merge(ya.dict_merge({}, SIGNS), opts.signs or {})
 
 	st.repos = {}
