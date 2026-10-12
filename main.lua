@@ -7,6 +7,9 @@
 -- Order in which the status signs are shown
 local ORDER = { "conflicted", "untracked", "stashed", "modified", "staged", "renamed", "deleted" }
 
+-- Order in which the upstream signs are shown
+local UPSTREAM = { "diverged", "ahead", "behind" }
+
 local SIGNS = {
 	conflicted = "=",
 	untracked = "?",
@@ -55,27 +58,48 @@ end
 
 ---@param status RepoStatus
 ---@param opts Options
----@return string
-local function format(status, opts)
+---@return Cells
+local function cells(status, opts)
 	local signs = opts.signs
-	local parts = { opts.icon .. (status.branch or (status.oid or ""):sub(1, 7)) }
-
-	local flags = ""
+	local cells = { head = opts.icon .. (status.branch or (status.oid or ""):sub(1, 7)) }
 	for _, name in ipairs(ORDER) do
-		flags = flags .. (status[name] and signs[name] or "")
-	end
-	if flags ~= "" then
-		parts[#parts + 1] = flags
+		cells[name] = status[name] and signs[name] or ""
 	end
 
-	local ahead = status.ahead > 0 and signs.ahead ~= "" and signs.ahead .. status.ahead or ""
-	local behind = status.behind > 0 and signs.behind ~= "" and signs.behind .. status.behind or ""
-	if ahead ~= "" and behind ~= "" then
-		parts[#parts + 1] = signs.diverged .. ahead .. behind
-	elseif ahead ~= "" or behind ~= "" then
-		parts[#parts + 1] = ahead .. behind
-	end
+	cells.ahead = status.ahead > 0 and signs.ahead ~= "" and signs.ahead .. status.ahead or ""
+	cells.behind = status.behind > 0 and signs.behind ~= "" and signs.behind .. status.behind or ""
+	cells.diverged = cells.ahead ~= "" and cells.behind ~= "" and signs.diverged or ""
+	return cells
+end
 
+-- Width of every cell that is used by at least one of the repositories
+---@param repos table<string, Cells>
+---@return table<string, number>
+local function measure(repos)
+	local widths = {}
+	for _, cells in pairs(repos) do
+		for name, cell in pairs(cells) do
+			widths[name] = math.max(widths[name] or 0, ui.Line(cell):width())
+		end
+	end
+	return widths
+end
+
+---@param cells Cells
+---@param widths table<string, number>? Width to pad every cell to, `nil` to not align them
+---@return string
+local function format(cells, widths)
+	local parts = { cells.head }
+	for _, names in ipairs { ORDER, UPSTREAM } do
+		local group = ""
+		for _, name in ipairs(names) do
+			local cell = cells[name]
+			group = group .. cell .. (widths and string.rep(" ", widths[name] - ui.Line(cell):width()) or "")
+		end
+		if group ~= "" then
+			parts[#parts + 1] = group
+		end
+	end
 	return table.concat(parts, " ")
 end
 
@@ -101,8 +125,24 @@ end
 
 ---@param repos table<string, RepoStatus|false> Status per directory, `false` if it is not a repository
 local save = ya.sync(function(st, repos)
+	local changed = {}
 	for path, status in pairs(repos) do
-		st.repos[path] = status and format(status, st.opts) or nil
+		-- Repositories are aligned with the others in the same directory
+		local dir = tostring(Url(path).parent or "")
+		st.dirs[dir] = st.dirs[dir] or {}
+		st.dirs[dir][path] = status and cells(status, st.opts) or nil
+		st.repos[path] = nil
+		changed[dir] = true
+	end
+
+	for dir in pairs(changed) do
+		local widths = st.opts.align and measure(st.dirs[dir]) or nil
+		for path, cells in pairs(st.dirs[dir]) do
+			st.repos[path] = format(cells, widths)
+		end
+		if not next(st.dirs[dir]) then
+			st.dirs[dir] = nil
+		end
 	end
 	ui.render()
 end)
@@ -114,9 +154,11 @@ local function setup(st, opts)
 	opts.order = opts.order or 1400
 	opts.style = opts.style or ui.Style():fg("yellow")
 	opts.icon = opts.icon or "󰊢 "
+	opts.align = opts.align or false
 	opts.signs = ya.dict_merge(ya.dict_merge({}, SIGNS), opts.signs or {})
 
 	st.repos = {}
+	st.dirs = {}
 	st.opts = opts
 
 	-- Linemode children are drawn right-aligned in the file list

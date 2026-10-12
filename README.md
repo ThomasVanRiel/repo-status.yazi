@@ -82,6 +82,8 @@ require("repo-status"):setup {
 	style = ui.Style():fg("yellow"),
 	-- Text shown before the branch name
 	icon = "󰊢 ",
+	-- Give every sign its own column, see "Alignment"
+	align = false,
 	-- Sign per status; set one to "" to hide that status
 	signs = {
 		conflicted = "=",
@@ -107,6 +109,24 @@ require("repo-status"):setup {
 	signs = { stashed = "", modified = "*" },
 }
 ```
+
+## Alignment
+
+By default the summary is as short as possible, so the signs end up wherever
+the branch name stops. With `align = true` every sign gets its own column,
+which is left empty for the repositories it does not apply to. The branch
+names then all end in the same column:
+
+```
+ dotfiles                      󰊢 main  !+
+ notes                         󰊢 main
+ website               󰊢 feature/blog ?   ⇡2
+ scratch
+```
+
+Space is only reserved for the signs that at least one repository in the
+directory shows, and the ahead and behind columns are as wide as their largest
+count. A directory with only clean repositories looks the same either way.
 
 ## Notes
 
