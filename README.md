@@ -13,10 +13,13 @@ file list, like a shell prompt does.
 [git.yazi](https://github.com/yazi-rs/plugins/tree/main/git.yazi) marks the
 changed files _inside_ the repository you are browsing. This plugin covers the
 other case: a directory full of repositories, where you want to see at a glance
-which ones are dirty, ahead or behind. The two work side by side. When you hover a repository with changes, the
-preview shows its changed files below the directory listing.
+which ones are dirty, ahead or behind. The two work side by side.
 
-![Branch and status next to each repository directory](.github/screenshot.png)
+Optionally, the preview of a repository also lists its changed files below the
+directory listing.
+
+![Branch and status next to each repository directory, and the changed files of
+the hovered one in the preview](.github/screenshot.png)
 
 ## Requirements
 
@@ -48,6 +51,27 @@ run   = "repo-status"
 group = "repo-status"
 ```
 
+To also show the changed files in the preview, register it as a previewer for
+directories in the same `yazi.toml`:
+
+```toml
+[[plugin.prepend_previewers]]
+url = "*/"
+run = "repo-status"
+```
+
+The previewer takes no settings in `yazi.toml`. Its options go in the `setup`
+call in `init.lua`. The screenshot above uses:
+
+```lua
+require("repo-status"):setup {
+	preview = { format = "long", stat = true },
+}
+```
+
+See [Changes in the preview](#changes-in-the-preview) and
+[Options](#options) for what you can set.
+
 ## What is shown
 
 The branch name (or the short commit hash when `HEAD` is detached), followed by
@@ -73,18 +97,10 @@ repositories show nothing.
 
 ## Changes in the preview
 
-The preview is optional and off by default. To turn it on, also register the
-plugin as a previewer for directories in `yazi.toml`:
-
-```toml
-[[plugin.prepend_previewers]]
-url = "*/"
-run = "repo-status"
-```
-
-Hovering a repository with changes then shows its changed files below the
-usual directory listing in the preview pane. Clean repositories and other
-directories are previewed as usual.
+The preview is optional and off until you register the previewer (see
+[Setup](#setup)). Hovering a repository with changes then shows its changed
+files at the bottom of the preview pane, below the usual directory listing.
+Clean repositories and other directories are previewed as usual.
 
 By default the list is as short as `git status --short`. The first column is
 the staged status (green), the second the unstaged status (red):
@@ -97,9 +113,9 @@ RM notes.md -> todo.md
 ?? draft.md
 ```
 
-With `format = "long"` the files are grouped like `git status` does, with the
-state spelled out. With `stat = true` the lines added and removed are shown
-next to every file, in either format:
+With `preview = { format = "long" }` the files are grouped like `git status`
+does, with the state spelled out. With `preview = { stat = true }` the lines
+added and removed are shown next to every file, in either format:
 
 ```
 ─ Changes (4) ───────────────────
@@ -156,13 +172,15 @@ require("repo-status"):setup {
 }
 ```
 
-You only need to pass the signs you want to change:
+You only need to pass the options you want to change, also inside `preview`
+and `signs`:
 
 ```lua
 require("repo-status"):setup {
 	style = ui.Style():fg("blue"):bold(),
 	icon = " ",
 	signs = { stashed = "", modified = "*" },
+	preview = { format = "long" },
 }
 ```
 
