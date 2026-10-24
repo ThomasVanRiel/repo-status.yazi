@@ -13,7 +13,8 @@ file list, like a shell prompt does.
 [git.yazi](https://github.com/yazi-rs/plugins/tree/main/git.yazi) marks the
 changed files _inside_ the repository you are browsing. This plugin covers the
 other case: a directory full of repositories, where you want to see at a glance
-which ones are dirty, ahead or behind. The two work side by side.
+which ones are dirty, ahead or behind. The two work side by side. When you hover a repository with changes, the
+preview shows its changed files below the directory listing.
 
 ![Branch and status next to each repository directory](.github/screenshot.png)
 
@@ -70,6 +71,52 @@ the upstream branch. The defaults match the
 A clean repository shows only its branch. Directories that are not
 repositories show nothing.
 
+## Changes in the preview
+
+The preview is optional and off by default. To turn it on, also register the
+plugin as a previewer for directories in `yazi.toml`:
+
+```toml
+[[plugin.prepend_previewers]]
+url = "*/"
+run = "repo-status"
+```
+
+Hovering a repository with changes then shows its changed files below the
+usual directory listing in the preview pane. Clean repositories and other
+directories are previewed as usual.
+
+By default the list is as short as `git status --short`. The first column is
+the staged status (green), the second the unstaged status (red):
+
+```
+─ Changes (4) ───────────────────
+AM new
+RM notes.md -> todo.md
+ M zshrc
+?? draft.md
+```
+
+With `format = "long"` the files are grouped like `git status` does, with the
+state spelled out. With `stat = true` the lines added and removed are shown
+next to every file, in either format:
+
+```
+─ Changes (4) ───────────────────
+Staged
+  new file:   new             +2
+  renamed:    notes.md -> todo.md
+Not staged
+  modified:   new             +1
+  modified:   todo.md      +4 -1
+  modified:   zshrc       +12 -4
+Untracked
+  draft.md
+```
+
+Counting lines runs two `git diff --numstat` per repository with changes, on
+top of the `git status`, so it is off by default.
+
 ## Options
 
 All options are optional; these are the defaults:
@@ -84,6 +131,15 @@ require("repo-status"):setup {
 	icon = "󰊢 ",
 	-- Give every sign its own column, see "Alignment"
 	align = true,
+	-- The changed files in the preview, see "Changes in the preview"
+	preview = {
+		-- Largest part of the preview the changes may take, 0 to hide them
+		height = 0.5,
+		-- "short" like `git status --short`, "long" grouped like `git status`
+		format = "short",
+		-- Show the lines added and removed per file
+		stat = false,
+	},
 	-- Sign per status; set one to "" to hide that status
 	signs = {
 		conflicted = "=",
@@ -135,6 +191,8 @@ A directory with only clean repositories looks the same either way.
   the current (middle) pane. On the hovered row it takes the hover style
   instead of its own colour, like git.yazi's signs.
 - One `git status` runs per repository directory in view, in the background.
+  The preview reuses its result, so it does not run `git` itself (except for
+  the line counts with `stat = true`).
   Statuses refresh when Yazi fetches the directory again (for example when you
   re-enter it), not continuously.
 - Worktrees and submodules (a `.git` file instead of a directory) are
